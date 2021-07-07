@@ -1,7 +1,7 @@
 const {server} = require("./server")
+const path = require('path')
+const PORT = process.env.PORT || 5000
 
-const port = 3000;
-
-server.listen(port, () => {
+server.listen(PORT, () => {
   console.log(`Blogsite online @ http://localhost:${port}`)
 })
