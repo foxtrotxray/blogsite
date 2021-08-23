@@ -19,7 +19,7 @@ function buildServer(db) {
     app.post("/submit", async (req, res) => {
         console.log("Request body:", req.body)
 
-        let results = db.query("SELECT * FROM articles");
+        let results = await db.query("SELECT * FROM articles");
 
         results.rows.forEach(row => {
             console.log(row)
