@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+const submissionText = "INSERT INTO articles(author_id, published, title, content) VALUES ($1, $2, $3, $4)";
+
 
 function buildServer(db) {
     app.use(express.static('public'))
@@ -28,14 +30,18 @@ function buildServer(db) {
             res.send("Incorrect name or password!");
         } else {
             console.log("AuthorID: " + authorTest.rows[0].author_id);
-            // db.query(`INSERT INTO articles VALUES(
-            //     default, 
-            //     ${authorTest.rows[0].author_id},
-            //     now(), 'very technical article, part 2', 'whereas UDP is equally challenging...');`)
-            // let results = await db.query("SELECT * FROM articles");
-            // results.rows.forEach(row => {
-            //     console.log(row)
-            // })
+            let submissionValues = [authorTest.rows[0].author_id,
+                                    'now()', req.body.title, req.body.article];
+            try {
+                const res = await db.query(submissionText, submissionValues)
+                console.log(res.rows[0])
+            } catch (err) {
+                console.log(err.stack)
+            }
+            let results = await db.query("SELECT * FROM articles");
+            results.rows.forEach(row => {
+                console.log(row)
+            })
     
             res.send("received");
 
