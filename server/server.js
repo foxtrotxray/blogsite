@@ -23,9 +23,31 @@ function buildServer(db) {
 
     })
     
-    // if there are ten more posts, get them; or all remaining
-    app.get('/more', (req, res) => {
-        res.send('sending more entries!')
+    // retrieve a specific article based on it's id
+    app.get('/view/:id', async (req, res) => {
+        console.log(req.params);
+        function articleHTML (article) {
+            let html = `<p>${article.author_name}</p>
+                        <p>${article.title}</p>
+                        <p>${article.published}</p>
+                        <p>${article.content}</p>`;
+            return html;
+        }  
+        let query = {
+            name: "view query",
+            text: "SELECT articles.*, authors.author_id, authors.author_name FROM articles, authors WHERE articles.article_id = $1 AND articles.author_id = authors.author_id",
+            values: [req.params.id]
+        };
+
+        await db.query(query)
+            .then(result => {
+                console.log(result.rows[0]);
+                res.send(articleHTML(result.rows[0]));
+            })
+            .catch(e => res.send("<pre>" + e.stack + "</pre>"));
+
+
+
     })
 
 
