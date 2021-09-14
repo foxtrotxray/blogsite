@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "devstart" : "DATABASE_URL=\"postgresql://kyle@localhost:5432/blogsite\" node index.js"
+    "devstart": "DATABASE_URL=\"postgresql://kyle@localhost:5432/blogsite\" node index.js"
   },
   "author": "Kyle Collins",
   "license": "",
@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "express-handlebars": "^5.3.3",
+    "handlebars": "^4.7.7",
     "pg": "^8.6.0"
   }
 }

@@ -2,6 +2,10 @@ const express = require('express')
 const app = express()
 const submissionText = "INSERT INTO articles(author_id, published, title, content) VALUES ($1, $2, $3, $4)";
 const authText = "SELECT author_id FROM authors WHERE author_name = $1 AND author_password = $2";
+const expressHandlebars = require('express-handlebars');
+
+app.engine('handlebars', expressHandlebars());
+app.set('view engine', 'handlebars');
 
 function buildServer(db) {
     app.use(express.static('public'))
@@ -9,16 +13,10 @@ function buildServer(db) {
     
     // Get & display the titles of all articles
     app.get('/', async (req, res) => {
-        let htmlBuilder = "<ol>"  
+        let htmlBuilder = {};
         let results = await db.query("SELECT title, article_id FROM articles ");
-        results.rows.forEach(row => {
-            console.log(row);
-            htmlBuilder += `<li><a href="view/${row.article_id}">${row.title}</a></li>`;
-        })
-        htmlBuilder += "</ol>";
-        
-        res.send(htmlBuilder);
-
+        console.log(results.rows);
+        res.render("home", {articles: results.rows});
 
 
     })
