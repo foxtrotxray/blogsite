@@ -2,7 +2,5 @@
 <p>
     You've learned a new thing; time to go back and do it everywhere that's applicable!
 </p>
-<a href='loginPage'><button>Login</button></a>
-<a href='form'><button>Submit an Article</button></a>
-
+{{> menu loggedIn=loggedIn}}
 {{> articleList articles=articles}}

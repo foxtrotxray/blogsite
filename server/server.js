@@ -1,22 +1,23 @@
 const express = require('express')
-const app = express()
+const expressHandlebars = require('express-handlebars');
+const session = require('express-session');
 const submissionText = "INSERT INTO articles(author_id, published, title, content) VALUES ($1, $2, $3, $4)";
 const authText = "SELECT author_id FROM authors WHERE author_name = $1 AND author_password = $2";
-const expressHandlebars = require('express-handlebars');
-
-app.engine('handlebars', expressHandlebars());
-app.set('view engine', 'handlebars');
 
 function buildServer(db) {
+    let app = express()
+    app.engine('handlebars', expressHandlebars());
+    app.set('view engine', 'handlebars');
     app.use(express.static('public'))
     app.use(express.urlencoded({ extended: true }));
+    app.use(session({ secret: process.env.COOKIE_SECRET, cookie: { maxAge: 600000}}))
     
     // Get & display the titles of all articles
     app.get('/', async (req, res) => {
         // I don't know if this is a safe query
         let results = await db.query("SELECT title, article_id FROM articles ");
         // console.log(results.rows);
-        res.render("home", {articles: results.rows});
+        res.render("home", {articles: results.rows, loggedIn: req.session.loggedIn});
     })
     
     // retrieve a specific article based on it's id
@@ -42,36 +43,48 @@ function buildServer(db) {
         let authorTest  = await db.query(authText, credentials);
         if (authorTest.rowCount === 1) {
             // start session
-            res.send ("Correct!");
+            req.session.user = req.body.name;
+            req.session.loggedIn = true;
+            req.session.author_id = authorTest.rows[0].author_id;
+            console.log(req.session, req.sessionID)
+            res.redirect(302, "/");
         } else {
             res.redirect(302, '/loginFail');
         }
     })
+
     app.get('/loginFail', (req, res) => {
         res.render("loginFail");
-    })    
+    })
+
+    app.get('/logOut', (req, res) =>{
+        req.session.destroy(function(err) {
+            res.redirect(302, "/")
+          })
+    })
+
     app.get('/form', (req, res) => {
-        res.render("form");
+        if (req.session.loggedIn) {
+            res.render("form");
+        } else {
+            res.redirect(401, '/login')
+        }
     })    
 
     app.post("/submit", async (req, res) => {
         // if not authenticated, forward to login page
-        // if (authorTest.rowCount === 0) {
-        //     res.send("Incorrect name or password!");
-        // if allowed, submit
-        // } else {
-        //     console.log("AuthorID: " + authorTest.rows[0].author_id);
-        //     let submissionValues = [authorTest.rows[0].author_id,
-        //                             'now()', req.body.title, req.body.article];
-        //     try {
-        //         const res = await db.query(submissionText, submissionValues)
-        //         console.log(res.rows[0])
-        //     } catch (err) {
-        //         console.log(err.stack)
-        //     }
-            res.send("received");
-
-        // }
+        if (req.session.loggedIn) {
+            let submissionValues = [req.session.author_id,
+                                    'now()', req.body.title, req.body.article];
+            try {
+                const res = await db.query(submissionText, submissionValues)
+            } catch (err) {
+                console.log(err.stack)
+            }
+            res.redirect(302, "/");
+        } else {
+            res.redirect(401, "/loginPage")
+        } 
     })
 
     return app;
