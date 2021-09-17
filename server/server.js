@@ -13,10 +13,9 @@ function buildServer(db) {
     
     // Get & display the titles of all articles
     app.get('/', async (req, res) => {
-        let htmlBuilder = {};
         // I don't know if this is a safe query
         let results = await db.query("SELECT title, article_id FROM articles ");
-        console.log(results.rows);
+        // console.log(results.rows);
         res.render("home", {articles: results.rows});
     })
     
@@ -34,35 +33,45 @@ function buildServer(db) {
             .catch(e => res.send("<pre>" + e.stack + "</pre>"));
     })
 
-    app.get('/form', async (req, res) => {
+    app.get('/loginPage', (req, res) => {
+        res.render("loginPage");
+    })
+
+    app.post('/login', async (req, res) => {
+        let credentials = [req.body.name, req.body.password];
+        let authorTest  = await db.query(authText, credentials);
+        if (authorTest.rowCount === 1) {
+            // start session
+            res.send ("Correct!");
+        } else {
+            res.redirect(302, '/loginFail');
+        }
+    })
+    app.get('/loginFail', (req, res) => {
+        res.render("loginFail");
+    })    
+    app.get('/form', (req, res) => {
         res.render("form");
     })    
 
     app.post("/submit", async (req, res) => {
-        console.log("Request body:", req.body)
-        let credentials = [req.body.name, req.body.password];
-        let authorTest  = await db.query(authText, credentials);
-        if (authorTest.rowCount === 0) {
-            res.send("Incorrect name or password!");
-        } else {
-            console.log("AuthorID: " + authorTest.rows[0].author_id);
-            let submissionValues = [authorTest.rows[0].author_id,
-                                    'now()', req.body.title, req.body.article];
-            try {
-                const res = await db.query(submissionText, submissionValues)
-                console.log(res.rows[0])
-            } catch (err) {
-                console.log(err.stack)
-            }
-            // this snippet displays all the articles in the console
-            // let results = await db.query("SELECT * FROM articles");
-            // results.rows.forEach(row => {
-            //     console.log(row)
-            // })
-    
+        // if not authenticated, forward to login page
+        // if (authorTest.rowCount === 0) {
+        //     res.send("Incorrect name or password!");
+        // if allowed, submit
+        // } else {
+        //     console.log("AuthorID: " + authorTest.rows[0].author_id);
+        //     let submissionValues = [authorTest.rows[0].author_id,
+        //                             'now()', req.body.title, req.body.article];
+        //     try {
+        //         const res = await db.query(submissionText, submissionValues)
+        //         console.log(res.rows[0])
+        //     } catch (err) {
+        //         console.log(err.stack)
+        //     }
             res.send("received");
 
-        }
+        // }
     })
 
     return app;
