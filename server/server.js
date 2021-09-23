@@ -8,9 +8,13 @@ function buildServer(db) {
     let app = express()
     app.engine('handlebars', expressHandlebars());
     app.set('view engine', 'handlebars');
-    app.use(express.static('public'))
+    // app.use(express.static('public'));
     app.use(express.urlencoded({ extended: true }));
-    app.use(session({ secret: process.env.COOKIE_SECRET, cookie: { maxAge: 600000}}))
+    app.use(session({ secret: process.env.COOKIE_SECRET,
+                      cookie: { maxAge: 600000},
+                      saveUninitialized: false,
+                      resave: false
+                    }))
     
     // Get & display the titles of all articles
     app.get('/', async (req, res) => {
@@ -29,6 +33,7 @@ function buildServer(db) {
         };
         await db.query(query)
             .then(result => {
+                result.rows[0].published = new Date(result.rows[0].published).toDateString()
                 res.render("partials/articlePage", result.rows[0]);
             })
             .catch(e => res.send("<pre>" + e.stack + "</pre>"));
