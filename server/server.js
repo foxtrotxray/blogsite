@@ -3,6 +3,7 @@ const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const submissionText = "INSERT INTO articles(author_id, published, title, content) VALUES ($1, $2, $3, $4)";
 const authText = "SELECT author_id FROM authors WHERE author_name = $1 AND author_password = $2";
+const postsText = "SELECT title, article_id FROM articles WHERE author_id = $1"
 
 function buildServer(db) {
     let app = express()
@@ -51,7 +52,7 @@ function buildServer(db) {
             req.session.user = req.body.name;
             req.session.loggedIn = true;
             req.session.author_id = authorTest.rows[0].author_id;
-            console.log(req.session, req.sessionID)
+            console.log(req.session, req.sessionID);
             res.redirect(302, "/");
         } else {
             res.redirect(302, '/loginFail');
@@ -88,8 +89,41 @@ function buildServer(db) {
             }
             res.redirect(302, "/");
         } else {
-            res.redirect(401, "/loginPage")
+            res.redirect(302, "/loginPage")
         } 
+    })
+    app.get("/myArticles", async (req, res) =>{
+        if (!req.session.loggedIn) {
+            res.redirect(302, "/loginPage")
+        } else {
+            // there's a bug in here with the username!
+            let results = await db.query(postsText, [req.session.author_id]);
+            res.render("myArticles", {articles: results.rows, author: req.session.user});
+        }
+    })
+    app.get('/edit/:id', async (req, res) => {
+        let query = {
+            name: "view query",
+            text: "SELECT articles.*, authors.author_id, authors.author_name FROM articles, authors WHERE articles.article_id = $1 AND articles.author_id = authors.author_id",
+            values: [req.params.id]
+        };
+        await db.query(query)
+            .then(result => {
+                console.log(result);
+                if (req.session.author_id == result.rows[0].author_id){
+                    result.rows[0].published = new Date(result.rows[0].published).toDateString()
+                    res.render("editArticle", {title:result.rows[0].title, content: result.rows[0].content});
+                } else if (!req.session.loggedIn) {
+                    res.redirect(302, "/loginPage");
+                }
+                else {
+                    res.render("badEdit")
+                }
+            })
+            .catch(e => res.send("<pre>" + e.stack + "</pre>"));
+    })
+    app.patch("/modify", async (req, res) => {
+        res.send("you hit the endpoint!")
     })
 
     return app;

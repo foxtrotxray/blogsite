@@ -1,0 +1,14 @@
+<h1>Welcome to tech debt hell, {{this.author}}!</h1>
+<a href='form'><button class="btn btn-primary">Submit an Article</button></a>
+<a href='/'><button class="btn btn-secondary">Back</button></a>
+<a href='logOut'><button class="btn btn-secondary">Log Out</button></a>
+
+<ol class="article_list">
+  {{#each articles}}
+    {{!-- this path needs to be changed --}}
+    <li>
+        <a href="view/{{this.article_id}}">{{this.title}}</a>
+        <a href="edit/{{this.article_id}}"><button class="btn btn-primary">Edit</button></a>
+    </li>
+  {{/each}}
+</ol>
