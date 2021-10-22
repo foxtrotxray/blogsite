@@ -143,7 +143,6 @@ function buildServer(db) {
                 articleOwner = result.rows[0].author_id;
             })
 
-        // you really need to validate before this step!
         if (!req.session.loggedIn) {
             res.redirect(302, "/loginPage");
         }
@@ -158,16 +157,6 @@ function buildServer(db) {
         else {
             res.render("badEdit");
         }
-
-
-        // if (!req.session.loggedIn) {
-        //     res.redirect(302, "/loginPage")
-        // } else {
-        //     let modifyTime = new Date().toDateString();
-        //     let updatedContent = `${req.body.article}        Updated on (${modifyTime})`;
-        //     await db.query(modifyText, [req.body.title, updatedContent, req.body.article_id]);
-        //     res.render("editSuccess");
-        // }
     })
 
 
