@@ -1,4 +1,4 @@
-<form action="/modify" method="PATCH">
+<form action="/modify/{{article_id}}" method="POST">
   <div class="form mb-3">
     <label for="title">    Title: </label>
     <input type="text" name="title" id="title" value="{{this.title}}" required>
@@ -9,6 +9,7 @@
   </div>
 
   <div>
+    <input type="hidden" value="{{article_id}}">
     <input type="submit" value="SUBMIT!" class="btn btn-primary">
   </div>
 </form>

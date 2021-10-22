@@ -1,9 +1,12 @@
-const express = require('express')
+const express = require('express');
 const expressHandlebars = require('express-handlebars');
 const session = require('express-session');
 const submissionText = "INSERT INTO articles(author_id, published, title, content) VALUES ($1, $2, $3, $4)";
 const authText = "SELECT author_id FROM authors WHERE author_name = $1 AND author_password = $2";
-const postsText = "SELECT title, article_id FROM articles WHERE author_id = $1"
+const postsText = "SELECT title, article_id FROM articles WHERE author_id = $1";
+const modifyText = "UPDATE articles SET (title, content) = ($1, $2) WHERE article_id = $3";
+const doubleCheckText = "SELECT author_id FROM articles WHERE article_id = $1";
+
 
 function buildServer(db) {
     let app = express()
@@ -96,14 +99,13 @@ function buildServer(db) {
         if (!req.session.loggedIn) {
             res.redirect(302, "/loginPage")
         } else {
-            // there's a bug in here with the username!
             let results = await db.query(postsText, [req.session.author_id]);
             res.render("myArticles", {articles: results.rows, author: req.session.user});
         }
     })
     app.get('/edit/:id', async (req, res) => {
         let query = {
-            name: "view query",
+            name: "edit query",
             text: "SELECT articles.*, authors.author_id, authors.author_name FROM articles, authors WHERE articles.article_id = $1 AND articles.author_id = authors.author_id",
             values: [req.params.id]
         };
@@ -112,7 +114,7 @@ function buildServer(db) {
                 console.log(result);
                 if (req.session.author_id == result.rows[0].author_id){
                     result.rows[0].published = new Date(result.rows[0].published).toDateString()
-                    res.render("editArticle", {title:result.rows[0].title, content: result.rows[0].content});
+                    res.render("editArticle", {title:result.rows[0].title, content: result.rows[0].content, article_id:req.params.id});
                 } else if (!req.session.loggedIn) {
                     res.redirect(302, "/loginPage");
                 }
@@ -122,11 +124,55 @@ function buildServer(db) {
             })
             .catch(e => res.send("<pre>" + e.stack + "</pre>"));
     })
-    app.patch("/modify", async (req, res) => {
-        res.send("you hit the endpoint!")
+    app.post("/modify/:id", async (req, res) => {
+        let modifyTime = new Date().toDateString();
+        let updatedContent = `${req.body.article}        Updated on (${modifyTime})`;
+        let query = {
+            name: "update query",
+            text: modifyText,
+            values: [req.body.title, updatedContent, req.params.id]
+        };
+        let doubleCheckQuery = {
+            name: "doubleCheck query",
+            text: doubleCheckText,
+            values: [req.params.id]
+        }
+        let articleOwner;
+        await db.query(doubleCheckQuery)
+            .then(result => {
+                articleOwner = result.rows[0].author_id;
+            })
+
+        // you really need to validate before this step!
+        if (!req.session.loggedIn) {
+            res.redirect(302, "/loginPage");
+        }
+        if (req.session.author_id == articleOwner){
+            await db.query(query)
+                .then(() => {
+                    res.render("editSuccess");
+                })
+                .catch(e => res.send("<pre>" + e.stack + "</pre>"));
+
+        } 
+        else {
+            res.render("badEdit");
+        }
+
+
+        // if (!req.session.loggedIn) {
+        //     res.redirect(302, "/loginPage")
+        // } else {
+        //     let modifyTime = new Date().toDateString();
+        //     let updatedContent = `${req.body.article}        Updated on (${modifyTime})`;
+        //     await db.query(modifyText, [req.body.title, updatedContent, req.body.article_id]);
+        //     res.render("editSuccess");
+        // }
     })
+
 
     return app;
 }
+
 
 exports.buildServer = buildServer;
